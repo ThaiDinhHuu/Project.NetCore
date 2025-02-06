@@ -1,11 +1,13 @@
 ﻿using eShopSolution.Data.EF;
 using eShopSolution.Data.Entities;
+using eShopSolution.ViewModels.Common;
 using eShopSolution.ViewModels.System.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -48,7 +50,8 @@ namespace eShopSolution.Application.System.User
             {
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.GivenName, user.FirstName),
-                new Claim(ClaimTypes.Role, string.Join(";", roles))
+                new Claim(ClaimTypes.Role, string.Join(";", roles)),
+                new Claim(ClaimTypes.Name, user.UserName),
             };
             var tokenKey = _configuration["Tokens:Key"];
             if (string.IsNullOrEmpty(tokenKey))
@@ -65,6 +68,38 @@ namespace eShopSolution.Application.System.User
 
             return new JwtSecurityTokenHandler().WriteToken(token);
 
+        }
+
+        public async Task<PagedResult<UserViewModel>> GetUserPaging(GetUserPagingRequest request)
+        {
+            var query = _context.AppUsers.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                query = query.Where(x => x.UserName.Contains(request.Keyword) || x.PhoneNumber.Contains(request.Keyword));
+            }
+
+            Console.WriteLine(query.GetType().FullName);
+
+            int totalRow =  query.Count();
+            var data =  query.Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(x => new UserViewModel()
+                {
+                    Id = x.Id,
+                    UserName = x.UserName,
+                    Email = x.Email,
+                    PhoneNumber = x.PhoneNumber,
+                    Dob = x.Dob,
+                    FirstName = x.FirstName,
+                    LastName = x.LastName
+                }).ToList();
+
+            var pagedResult = new PagedResult<UserViewModel>()
+            {
+                TotalRecords = totalRow,
+                Items = data
+            };
+            return pagedResult;
         }
 
         public async Task<bool> Register(RegisterRequest request)
