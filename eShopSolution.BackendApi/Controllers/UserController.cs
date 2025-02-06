@@ -17,7 +17,7 @@ namespace eShopSolution.BackendApi.Controllers
         }
         [HttpPost("authenticate")]
         [AllowAnonymous]
-        public async Task<IActionResult> Authenticate([FromForm] LoginRequest request)
+        public async Task<IActionResult> Authenticate([FromBody] LoginRequest request)
         {
             if(!ModelState.IsValid)
             {
@@ -28,10 +28,15 @@ namespace eShopSolution.BackendApi.Controllers
             {
                 return BadRequest("Username or password is incorrect.");
             }
-            return Ok(new {token = Token});
+            else
+            {
+
+            }
+            return Ok(Token);
         }
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromForm] RegisterRequest request)
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _userService.Register(request);
             if (!result)
@@ -39,6 +44,13 @@ namespace eShopSolution.BackendApi.Controllers
                 return BadRequest();
             }
             return Ok();
+        }
+
+        [HttpGet("paging")]
+        public async Task<IActionResult> GetUserPaging([FromQuery] GetUserPagingRequest request)
+        {
+            var users = await _userService.GetUserPaging(request);
+            return Ok(users);
         }
     }
 }
