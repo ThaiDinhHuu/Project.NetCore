@@ -44,6 +44,28 @@ namespace eShopSolution.AdminApp.Controllers
         }
 
         [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+            var result = await _userApiClient.RegisterUser(request);
+            if (result)
+            {
+                return RedirectToAction("Index");
+            }
+            ModelState.AddModelError("", "Register failed");
+            return View(request);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Login()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Sign out to avoid duplicate login
